@@ -226,6 +226,10 @@ def user_reject_email(request, salon_id, user_id):
 def checkin(request, salon_code):
 	barcode = request.GET['barcode']
 	salon = Salon.objects.get(code = salon_code)
+	try:
+		edit_type=request.GET['edit_type']
+	except:
+		edit_type=''
 	msg=''	
 	try:
 		checking_user = User.objects.get(salon = salon,barcode=barcode)
@@ -234,7 +238,11 @@ def checkin(request, salon_code):
 	else:
 		User.checkined(checking_user.user_id)
 		msg=unicode(checking_user.name)+u" 已在 "+unicode(salon.code)+u" 签到成功!"
-	return render_to_response('salon/checkin_manual.html',{"salon_code":salon_code,"msg":msg})
+	
+	if edit_type=='checkin_manual':
+		return render_to_response('salon/checkin_manual.html',{"salon_code":salon_code,"msg":msg})
+	else:
+		return HttpResponse(msg); 
 
 def checkin_manual(request, salon_code):
 	salon = Salon.objects.get(code = salon_code)
