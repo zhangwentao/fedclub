@@ -31,6 +31,7 @@
 			<td>自我介绍</td>
 			<td>二维码</td>
 			<td>状态</td>
+			<td>签到</td>
 			<td>操作</td>
 		</tr>
 	</thead>
@@ -47,6 +48,12 @@
 				{% if user.status == 0 %}
 				<td>未处理</td>
 				{% endif %}
+				{% if user.is_checkined > 0 %}
+				<td>已签到</td>
+				{% else %}
+				<td>未签到</td>
+				{% endif %}
+
 				<td><a href='javascript:void()' onclick='deleteUser("/salon/{{salon.code}}/user/{{user.user_id}}/delete")'>删除</a>,
 					<a href='/salon/{{salon.code}}/user/{{user.user_id}}/accept'>通过</a>, 
 					<a href='/salon/{{salon.code}}/user/{{user.user_id}}/reject'>拒绝</a></td>
@@ -69,6 +76,7 @@
 			<td>自我介绍</td>
 			<td>二维码</td>
 			<td>状态</td>
+			<td>签到</td>
 			<td>操作</td>
 		</tr>
 	</thead>
@@ -90,6 +98,11 @@
 				{% endif %}
 				{% if user.status == 12 %}
 				<td>已签到</td>
+				{% endif %}
+				{% if user.is_checkined > 0 %}
+				<td>已签到</td>
+				{% else %}
+				<td>未签到</td>
 				{% endif %}
 				<td>
 					{% if user.status == 10 %}
@@ -121,6 +134,7 @@
 			<td>自我介绍</td>
 			<td>二维码</td>
 			<td>状态</td>
+			<td>签到</td>
 			<td>操作</td>
 		</tr>
 	</thead>
@@ -140,6 +154,12 @@
 				{% if user.status == 21 %}
 				<td>已发送邮件</td>
 				{% endif %}
+				{% if user.is_checkined > 0 %}
+				<td>已签到</td>
+				{% else %}
+				<td>未签到</td>
+				{% endif %}
+
 				<td>
 					{% if user.status == 20 %}
 					<a href='/salon/{{salon.code}}/user/{{user.user_id}}/reset'>重置</a>, 

@@ -109,9 +109,17 @@ class User(models.Model):
 	def __unicode__(self):
 		return "%s(from %s), %s, %s, %s" % (self.name, self.company, self.mobile, self.email, self.introduction)
 
+	def __getattr__(self,name):
+		if name=='is_checkined':
+			sign = self.status%10
+			if sign == 2:
+				return	1 
+			else:	
+				return	0 
+
 	@classmethod
 	def get_untreated(cls, salon_id):
-		return cls.objects.filter(salon = salon_id, status = 0)
+		return cls.objects.filter(salon = salon_id, status__lt = 10)
 
 	@classmethod
 	def get_accepted(cls, salon_id):
