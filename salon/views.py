@@ -10,13 +10,14 @@ from django.core.urlresolvers import reverse
 import datetime
 
 # ^$
-def home(request):
+def home(request, message = None):
 	salons = Salon.objects.all()
-	return render_to_response('index.html', {'salons': salons})
+	return render_to_response('index.html', {'salons': salons, 'message': message})
 
 # ^salon/$
-def salon_list(request):
-	return HttpResponse('salon_list')
+def salon_list(request, message = None):
+	salons = Salon.objects.all()
+	return render_to_response('index.html', {'salons': salons, 'message': message})
 
 # ^salon/add/
 def salon_add(request):
@@ -27,6 +28,9 @@ def salon_add(request):
 	else:
 		salon = Salon()
 		salon.code = request.POST['code']
+		salons_in_db = Salon.objects.filter(code = salon.code)
+		if len(salons_in_db) != 0:
+			return salon_list(request, u"沙龙代号" + salon.code + u"已存在，不允许重复");
 		salon.name = request.POST['name']
 		salon.start_time = request.POST['start_time']
 		salon.end_time = request.POST['end_time']
@@ -34,15 +38,15 @@ def salon_add(request):
 		salon.description = request.POST['description']
 		salon.address = request.POST['address']
 		salon.save()
-		return HttpResponseRedirect(reverse('home'))
+		return HttpResponseRedirect('/salon/')
 
 # ^salon/(?P<salon_id>[\w\d]+)/$
-def salon_get(request, salon_id):
+def salon_get(request, salon_id, message = None):
 	salon = Salon.objects.get(code = salon_id)
 	untreated_users = User.get_untreated(salon.salon_id)
 	accepted_users = User.get_accepted(salon.salon_id)
 	rejected_users = User.get_rejected(salon.salon_id)
-	return render_to_response('salon/view.html', {'salon':salon, 'salon_code':salon.code, 'untreated_users':untreated_users,'accepted_users':accepted_users,'rejected_users':rejected_users}, context_instance=RequestContext(request))
+	return render_to_response('salon/view.html', {'message':message, 'salon':salon, 'salon_code':salon.code, 'untreated_users':untreated_users,'accepted_users':accepted_users,'rejected_users':rejected_users}, context_instance=RequestContext(request))
 
 # ^salon/(?P<salon_id>[\w\d]+)/update/$
 def salon_update(request, salon_id):
@@ -50,9 +54,9 @@ def salon_update(request, salon_id):
 # ^salon/(?P<salon_id>[\w\d]+)/delete/$
 def salon_delete(request, salon_id):
 	salon = Salon.objects.get(code = salon_id)
-	salon_name = salon.name
+	salon_code = salon.code
 	salon.delete()
-	return render_to_response('salon/delete_success.html', {'salon_name':salon_name})
+	return home(request, salon_code + u"删除成功！" )
 
 # many users
 # ^salon/(?P<salon_id>[\w\d]+)/users/$
@@ -73,10 +77,15 @@ def users_add(request, salon_id):
 		user.company = request.POST['company']
 		user.mobile = request.POST['mobile']
 		user.email = request.POST['email']
+		users = User.objects.filter(salon = salon.salon_id, email = user.email)
+		if len(users) != 0:
+			error_message = u"邮箱 %s 已经注册过了" % user.email
+			return salon_get(request, user.salon.code, error_message);
+
 		user.introduction = request.POST['introduction']
 		user.barcode = gen_barcode_md5(salon, user)
 		user.register_time = datetime.datetime.today()
-		user.status = 0
+		user.status = 13
 		user.save()
 		return HttpResponseRedirect('/salon/' + user.salon.code + '/')
 
@@ -139,8 +148,7 @@ def users_accept_email(request, salon_id):
 		user_ids = request.POST.getlist('select_accepted_users')
 		for user_id in user_ids:
 			user = User.objects.get(user_id = user_id)
-			if (user.status == 10):
-				send_mail(salon, user)
+			if (user.status == 10) and send_mail(salon, user):
 				user.status = 11
 				user.save()
 
@@ -153,8 +161,7 @@ def users_reject_email(request, salon_id):
 		user_ids = request.POST.getlist('select_rejected_users')
 		for user_id in user_ids:
 			user = User.objects.get(user_id = user_id)
-			if (user.status == 20):
-				send_mail(salon, user)
+			if (user.status == 20) and send_mail(salon, user):
 				user.status = 21
 				user.save()
 
@@ -169,7 +176,8 @@ def user_get(request, salon_id, user_id):
 # ^salon/(?P<salon_id>[\w\d]+)/user/(?P<user_id>[\w\d]+)/delete$
 def user_delete(request, salon_id, user_id):
 	user = User.objects.get(user_id = user_id)
-	user.delete()
+	user.status = -1
+	user.save()
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
 # ^salon/(?P<salon_id>[\w\d]+)/user/(?P<user_id>[\w\d]+)/update$
@@ -204,8 +212,7 @@ def user_email(request, salon_id, user_id):
 def user_accept_email(request, salon_id, user_id):
 	user = User.objects.get(user_id = user_id)
 	salon = Salon.objects.get(code = salon_id)
-	send_mail(salon, user)
-	if (user.status != 11):
+	if send_mail(salon, user) and (user.status != 11):
 		user.status = 11
 		user.save()
 
@@ -215,8 +222,7 @@ def user_accept_email(request, salon_id, user_id):
 def user_reject_email(request, salon_id, user_id):
 	user = User.objects.get(user_id = user_id)
 	salon = Salon.objects.get(code = salon_id)
-	send_mail(salon, user)
-	if (user.status != 21):
+	if send_mail(salon, user) and (user.status != 21):
 		user.status = 21
 		user.save()
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
