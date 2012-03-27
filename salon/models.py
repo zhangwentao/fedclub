@@ -47,9 +47,6 @@ class User(models.Model):
 	user_id = models.AutoField(primary_key = True)
 	#外键，关联salon
 	salon = models.ForeignKey(Salon)
-
-	#报名人相关信息
-
 	#姓名
 	name = models.CharField(max_length = 40) 
 	#手机号
@@ -60,116 +57,85 @@ class User(models.Model):
 	company = models.CharField(null=True, max_length = 100) 
 	#自我介绍
 	introduction = models.CharField(null=True, max_length = 200) 
-
 	# 注册时间
 	register_time = models.DateTimeField()
 
 	#处理状态
-	# 1、未处理 00
-	# 2、已同意未发邮件 10
-	# 3、已同意已发邮件 11
-	# 4、已同意已发邮件已签到   12
-	# 5、已拒绝未发邮件 20
-	# 6、已拒绝已发邮件 21
-	# 7、现场注册用户   13
-	# 8、已删除         -1
-	status = models.SmallIntegerField(default = 00)
+	# 1、是否以删除 	0:否 1:是  
+	# 2、已接受状态 	0:为处理 1:已接受 2:已拒绝 
+	# 3、是否已发邮件 	0:否 1:是
+	# 4、是否已签到  	0:否 1:是  
+	# 5、是否线下注册 	0:否 1:是  
+	status = models.CharField(default="00000", max_length = 20) 
 	
 	#二维码
 	barcode = models.CharField(null = True, max_length = 40) 
 	
-	def get_status(self):
-		if (self.not_handled()):
-			return 'not-handle'
-		elif (self.accepted()):
-			if (self.emailed()):
-				if (self.checkined()):
-					return 'checkin'
-				else:
-					return 'accept&email'
-			elif (self.not_emailed()):
-				return 'accept&not-email'
-		elif (self.rejected()):
-			if (self.emailed()):
-				return 'reject&email'
-			elif (self.not_emailed()):
-				return 'reject&not-email'
-
-	def not_handled(self):
-		return self.status == 0
-	def accepted(self):
-		return self.status / 10 == 1
-	def rejected(self):
-		return self.status / 10 == 2
-	def emailed(self):
-		return self.status % 10 > 0
-	def not_emailed(self):
-		return self.status % 10 == 0
-	def checkined(self):
-		return self.status % 10 == 2
-
 	def __unicode__(self):
 		return "%s(from %s), %s, %s, %s" % (self.name, self.company, self.mobile, self.email, self.introduction)
 
 	def __getattr__(self,name):
-		if name=='is_checkined':
-			sign = self.status%10
-			if sign == 2:
-				return	1 
-			else:	
-				return	0 
+		if name=='checkined':
+			return self.get_flag(4)
+		elif name=='accepted':
+			return self.get_flag(2)
+		elif name == 'mailed':
+			return self.get_flag(3)
+		elif name == 'offline_reg':
+			return self.get_flag(5)
+		elif name == 'deleted':
+			return self.get_flag(1)
+		else:
+			return object.__getattr__(self,name)
+
+	def __setattr__(self,name,value):
+		if name=='checkined':
+			self.set_flag(4,value) 		
+		elif name=='accepted':
+			self.set_flag(2,value)
+		elif name == 'mailed':
+			self.set_flag(3,value)
+		elif name == 'offline_reg':
+			self.set_flag(5,value)
+		elif name == 'deleted':
+			self.set_flag(1,value)
+		else:
+			object.__setattr__(self,name,value)
+
+	def get_flag(self,index):
+		return int(self.status[index-1])
+
+	def set_flag(self,index,value):
+		temp = self.status
+		head = temp[:index-1]
+		rear = temp[index:]	
+		#print 'head:'+head,'rear:'+rear
+		self.status =head+str(value)+rear
+		self.save()
 
 	@classmethod
 	def get_untreated(cls, salon_id):
-		return cls.objects.filter(salon = salon_id, status__lt = 10)
+		temp = cls.objects.filter(salon = salon_id)
+		users = []
+		for user in temp:
+			if user.accepted == 0:
+				users.append(user)
+		return users
 
 	@classmethod
 	def get_accepted(cls, salon_id):
-		return cls.objects.filter(salon = salon_id, status__gt = 9, status__lt = 20).order_by('status')
+		temp = cls.objects.filter(salon = salon_id)
+		users = []
+		for user in temp:
+			if user.accepted == 1:
+				users.append(user)
+		return users
 
 	@classmethod
 	def get_rejected(cls, salon_id):
-		return cls.objects.filter(salon = salon_id, status__gt = 19).order_by('status')
-
-	#接受user_id指定用户的申请	
-	@classmethod
-	def accept(cls,user_id):
-		cls.__set_accept_flag__(user_id,10)
-		
-	#拒绝user_id指定用户的申请	
-	@classmethod
-	def reject(cls,user_id):
-		cls.__set_accept_flag__(user_id,20)
-
-	#设置user_id指定用户状态为已发送邮件	
-	@classmethod
-	def mailed(cls,user_id):
-		cls.__set_mail_flag__(user_id,1)
-
-	#设置user_id指定用户状态为未发送邮件	
-	@classmethod
-	def unmailed(cls,user_id):
-		cls.__set_mail_flag__(user_id,0)
-
-	#设置user_id指定用户状态为已签到
-	@classmethod
-	def checkined(cls,user_id):
-		cls.__set_mail_flag__(user_id,2)
-
-	@classmethod
-	def __set_mail_flag__(cls,user_id,flag_num):
-		user = cls.objects.get(user_id=user_id)
-		flag = user.status
-	        flag = flag / 10 * 10 + flag_num 
-		user.status = flag
-		user.save()
-
-	@classmethod
-        def __set_accept_flag__(cls,user_id,flag_num):
-		user = cls.objects.get(user_id=user_id)
-		flag = user.status
-	        flag = flag % 10 + flag_num 
-		user.status = flag
-                user.save()
-
-                	
+		temp = cls.objects.filter(salon = salon_id)
+		users = []
+		for user in temp:
+			if user.accepted == 2:
+				users.append(user)
+		return users
