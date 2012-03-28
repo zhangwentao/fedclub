@@ -85,7 +85,8 @@ def users_add(request, salon_id):
 		user.introduction = request.POST['introduction']
 		user.barcode = gen_barcode_md5(salon, user)
 		user.register_time = datetime.datetime.today()
-		user.status = 13
+		user.offline_reg = 1
+		user.accepted = 1
 		user.save()
 		return HttpResponseRedirect('/salon/' + user.salon.code + '/')
 
@@ -99,17 +100,19 @@ def users_reset(request, salon_id):
 		user_ids = request.POST.getlist('select_rejected_users')
 		for user_id in user_ids:
 			user = User.objects.get(user_id = user_id)
-			if (user.status != 21):
-				user.status = 0
-				user.save()
+			if (user.accepted == 2 and user.mailed == 1):
+				pass
+			else:
+				user.reset()
 
 	if request.POST.has_key('select_accepted_users'):
 		user_ids = request.POST.getlist('select_accepted_users')
 		for user_id in user_ids:
 			user = User.objects.get(user_id = user_id)
-			if (user.status != 11 and user.status != 12):
-				user.status = 0
-				user.save()
+			if (user.accepted == 1 and user.mailed == 1):
+				pass
+			else:
+				user.reset()
 
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
@@ -119,10 +122,8 @@ def users_accept(request, salon_id):
 		user_ids = request.POST.getlist('select_untreated_users')
 		for user_id in user_ids:
 			user = User.objects.get(user_id = user_id)
-			if (user.status != 10):
-				user.status = 10
-				user.save()
-
+			if (user.accepted != 1):
+				user.accepted = 1
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
 # ^salon/(?P<salon_id>[\w\d]+)/users/reject$
@@ -131,10 +132,8 @@ def users_reject(request, salon_id):
 		user_ids = request.POST.getlist('select_untreated_users')
 		for user_id in user_ids:
 			user = User.objects.get(user_id = user_id)
-			if (user.status != 20):
-				user.status = 20
-				user.save()
-
+			if (user.accepted != 2):
+				user.accepted = 2
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
 # ^salon/(?P<salon_id>[\w\d]+)/users/email$
@@ -148,10 +147,8 @@ def users_accept_email(request, salon_id):
 		user_ids = request.POST.getlist('select_accepted_users')
 		for user_id in user_ids:
 			user = User.objects.get(user_id = user_id)
-			if (user.status == 10) and send_mail(salon, user):
-				user.status = 11
-				user.save()
-
+			if (user.accepted == 1) and send_mail(salon, user):
+				user.mailed = 1
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
 # ^salon/(?P<salon_id>[\w\d]+)/users/reject_email$
@@ -161,10 +158,8 @@ def users_reject_email(request, salon_id):
 		user_ids = request.POST.getlist('select_rejected_users')
 		for user_id in user_ids:
 			user = User.objects.get(user_id = user_id)
-			if (user.status == 20) and send_mail(salon, user):
-				user.status = 21
-				user.save()
-
+			if (user.mailed == 0) and send_mail(salon, user):
+				user.mailed = 1
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
 # single user
@@ -176,8 +171,7 @@ def user_get(request, salon_id, user_id):
 # ^salon/(?P<salon_id>[\w\d]+)/user/(?P<user_id>[\w\d]+)/delete$
 def user_delete(request, salon_id, user_id):
 	user = User.objects.get(user_id = user_id)
-	user.status = -1
-	user.save()
+	user.deleted = 1
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
 # ^salon/(?P<salon_id>[\w\d]+)/user/(?P<user_id>[\w\d]+)/update$
@@ -187,20 +181,21 @@ def user_update(request, salon_id, user_id):
 # ^salon/(?P<salon_id>[\w\d]+)/user/(?P<user_id>[\w\d]+)/reset$
 def user_reset(request, salon_id, user_id):
 	user = User.objects.get(user_id = user_id)
-	user.status = 0;
-	user.save()
+	user.reset()
 	return HttpResponseRedirect('/salon/'+salon_id+'/');
 	#return HttpResponse('user_accept')
 
 # ^salon/(?P<salon_id>[\w\d]+)/user/(?P<user_id>[\w\d]+)/accept$
 def user_accept(request, salon_id, user_id):
-	User.accept(user_id);
+	user = User.objects.get(user_id = user_id)
+	user.accepted = 1
 	return HttpResponseRedirect('/salon/'+salon_id+'/');
 	#return HttpResponse('user_accept')
 
 # ^salon/(?P<salon_id>[\w\d]+)/user/(?P<user_id>[\w\d]+)/reject$
 def user_reject(request, salon_id, user_id):
-	User.reject(user_id);
+	user = User.objects.get(user_id = user_id)
+	user.accepted = 2
 	return HttpResponseRedirect('/salon/'+salon_id+'/');
 	#return HttpResponse('user_reject')
 
@@ -212,8 +207,8 @@ def user_email(request, salon_id, user_id):
 def user_accept_email(request, salon_id, user_id):
 	user = User.objects.get(user_id = user_id)
 	salon = Salon.objects.get(code = salon_id)
-	if send_mail(salon, user) and (user.status != 11):
-		user.status = 11
+	if send_mail(salon, user) and (user.mailed != 1):
+		user.mailed = 1
 		user.save()
 
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
@@ -222,9 +217,8 @@ def user_accept_email(request, salon_id, user_id):
 def user_reject_email(request, salon_id, user_id):
 	user = User.objects.get(user_id = user_id)
 	salon = Salon.objects.get(code = salon_id)
-	if send_mail(salon, user) and (user.status != 21):
-		user.status = 21
-		user.save()
+	if send_mail(salon, user) and (user.mailed!= 1):
+		user.mailed = 1
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
 # check in, by barcode
@@ -242,7 +236,7 @@ def checkin(request, salon_code):
 	except:
 		msg=u"二维码  "+unicode(barcode)+u"  对应的用户不存在!"
 	else:
-		User.checkined(checking_user.user_id)
+		checking_user.checkined = 1
 		msg=unicode(checking_user.name)+u" 已在 "+unicode(salon.code)+u" 签到成功!"
 	
 	if edit_type=='checkin_manual':

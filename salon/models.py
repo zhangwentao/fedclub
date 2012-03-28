@@ -66,7 +66,7 @@ class User(models.Model):
 	# 3、是否已发邮件 	0:否 1:是
 	# 4、是否已签到  	0:否 1:是  
 	# 5、是否线下注册 	0:否 1:是  
-	status = models.CharField(default="00000", max_length = 20) 
+	status = models.CharField(default=u"00000", max_length = 20) 
 	
 	#二维码
 	barcode = models.CharField(null = True, max_length = 40) 
@@ -74,6 +74,11 @@ class User(models.Model):
 	def __unicode__(self):
 		return "%s(from %s), %s, %s, %s" % (self.name, self.company, self.mobile, self.email, self.introduction)
 
+	def __init__(self,*args):
+		models.Model.__init__(self,*args)
+		if self.user_id == None:
+			self.status = u'00000'
+	
 	def __getattr__(self,name):
 		if name=='checkined':
 			return self.get_flag(4)
@@ -109,33 +114,40 @@ class User(models.Model):
 		temp = self.status
 		head = temp[:index-1]
 		rear = temp[index:]	
-		#print 'head:'+head,'rear:'+rear
 		self.status =head+str(value)+rear
 		self.save()
 
+	#重置用户所有状态
+	def reset(self):
+		self.status = u'00000'
+		self.save()
+
+	#获取salon_id指定salon的为处理用户的列表
 	@classmethod
 	def get_untreated(cls, salon_id):
 		temp = cls.objects.filter(salon = salon_id)
 		users = []
 		for user in temp:
-			if user.accepted == 0:
+			if user.accepted == 0 and user.deleted == 0:
 				users.append(user)
 		return users
 
+	#获取salon_id指定salon的已通过用户的列表
 	@classmethod
 	def get_accepted(cls, salon_id):
 		temp = cls.objects.filter(salon = salon_id)
 		users = []
 		for user in temp:
-			if user.accepted == 1:
+			if user.accepted == 1 and user.deleted == 0:
 				users.append(user)
 		return users
 
+	#获取salon_id指定salon的已拒绝用户的列表
 	@classmethod
 	def get_rejected(cls, salon_id):
 		temp = cls.objects.filter(salon = salon_id)
 		users = []
 		for user in temp:
-			if user.accepted == 2:
+			if user.accepted == 2 and user.deleted == 0:
 				users.append(user)
 		return users

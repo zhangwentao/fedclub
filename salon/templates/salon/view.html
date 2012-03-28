@@ -31,7 +31,6 @@
 			<td>自我介绍</td>
 			<td>二维码</td>
 			<td>状态</td>
-			<td>签到</td>
 			<td>操作</td>
 		</tr>
 	</thead>
@@ -45,15 +44,18 @@
 				<td>{{user.email}}</td>
 				<td><textarea readonly=readonly rows=1 cols=40 style="resize:vertical">{{user.introduction}}</textarea></td>
 				<td>{{user.barcode}}</td>
-				{% if user.status == 0 %}
-				<td>未处理</td>
-				{% endif %}
-				{% if user.is_checkined > 0 %}
-				<td>已签到</td>
+				<td>
+				{% if user.mailed == 1 %}
+				已发邮件	
 				{% else %}
-				<td>未签到</td>
+				未发邮件
+				{% endif %},
+				{% if user.checkined == 1 %}
+				已签到	
+				{% else %}
+				未签到
 				{% endif %}
-
+				</td>
 				<td><a href='javascript:void()' onclick='deleteUser("/salon/{{salon.code}}/user/{{user.user_id}}/delete")'>删除</a>,
 					<a href='/salon/{{salon.code}}/user/{{user.user_id}}/accept'>通过</a>, 
 					<a href='/salon/{{salon.code}}/user/{{user.user_id}}/reject'>拒绝</a></td>
@@ -76,7 +78,6 @@
 			<td>自我介绍</td>
 			<td>二维码</td>
 			<td>状态</td>
-			<td>签到</td>
 			<td>操作</td>
 		</tr>
 	</thead>
@@ -90,25 +91,25 @@
 				<td>{{user.email}}</td>
 				<td><textarea readonly=readonly rows=1 cols=40 style="resize:vertical">{{user.introduction}}</textarea></td>
 				<td>{{user.barcode}}</td>
-				{% if user.status == 10 %}
-				<td>未发送邮件</td>
-				{% endif %}
-				{% if user.status == 11 %}
-				<td>已发送邮件</td>
-				{% endif %}
-				{% if user.status == 12 %}
-				<td>已签到</td>
-				{% endif %}
-				{% if user.status == 13 %}
-				<td>现场签到</td>
-				{% endif %}
 				<td>
-					{% if user.status == 10 %}
+				{% if user.mailed == 1 %}
+				已发邮件	
+				{% else %}
+				未发邮件
+				{% endif %},
+				{% if user.checkined == 1 %}
+				已签到	
+				{% else %}
+				未签到
+				{% endif %}
+				</td>
+				<td>
+					{% if user.mailed == 0 %}
 					<a href='/salon/{{salon.code}}/user/{{user.user_id}}/reset'>重置</a>, 
 					<a href='/salon/{{salon.code}}/user/{{user.user_id}}/reject'>拒绝</a>,
 					<a href='/salon/{{salon.code}}/user/{{user.user_id}}/accept_email'>发邮件</a>
 					{% endif %}
-					{% if user.status == 11 %}
+					{% if user.mailed == 1 %}
 					<a href='/salon/{{salon.code}}/user/{{user.user_id}}/accept_email'>重新发邮件</a>
 					<a href='/salon/{{salon.code}}/checkin?barcode={{user.barcode}}'>签到</a>
 					{% endif %}
@@ -132,7 +133,6 @@
 			<td>自我介绍</td>
 			<td>二维码</td>
 			<td>状态</td>
-			<td>签到</td>
 			<td>操作</td>
 		</tr>
 	</thead>
@@ -146,25 +146,26 @@
 				<td>{{user.email}}</td>
 				<td><textarea readonly=readonly rows=1 cols=40 style="resize:vertical;">{{user.introduction}}</textarea></td>
 				<td>{{user.barcode}}</td>
-				{% if user.status == 20 %}
-				<td>未发送邮件</td>
-				{% endif %}
-				{% if user.status == 21 %}
-				<td>已发送邮件</td>
-				{% endif %}
-				{% if user.is_checkined > 0 %}
-				<td>已签到</td>
+				<td>
+				{% if user.mailed == 1 %}
+				已发邮件	
 				{% else %}
-				<td>未签到</td>
+				未发邮件
+				{% endif %},
+				{% if user.checkined == 1 %}
+				已签到	
+				{% else %}
+				未签到
 				{% endif %}
+				</td>
 
 				<td>
-					{% if user.status == 20 %}
+					{% if user.mailed == 0 %}
 					<a href='/salon/{{salon.code}}/user/{{user.user_id}}/reset'>重置</a>, 
 					<a href='/salon/{{salon.code}}/user/{{user.user_id}}/accept'>通过</a>,
 					<a href='/salon/{{salon.code}}/user/{{user.user_id}}/reject_email'>发邮件</a>
 					{% endif %}
-					{% if user.status == 21 %}
+					{% if user.mailed == 1 %}
 					<a href='/salon/{{salon.code}}/user/{{user.user_id}}/reject_email'>重新发邮件</a>
 					{% endif %}
 				</td>
