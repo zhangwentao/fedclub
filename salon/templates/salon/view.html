@@ -16,7 +16,7 @@
 <hr>
 <form id="bigForm" method="post">
 	{% csrf_token %}
-<b>未处理用户信息：</b>
+<b>未处理用户信息({{untreated_users|length}})：</b>
 <a href='javascript:void' onclick="acceptSelectedUsers()">通过所有选择的用户</a> ---
 <a href='javascript:void' onclick="rejectSelectedUsers()">拒绝所有选择的用户</a>
 <!-- <a href='javascript:void' onclick="deleteSelectedUsers()">删除所有选择的用户</a> -->
@@ -64,7 +64,7 @@
 		</tr>
 	</tbody>
 </table>
-<br><hr><b>已通过用户信息：</b>
+<br><hr><b>已通过用户信息({{accepted_users|length}})：</b>
 <a href='javascript:void' onclick="sendAcceptEmails()">发邮件给所有选中的“已通过未发邮件”用户</a> --- 
 <a href='javascript:void' onclick="resetSelectedUsers_accept()">重置所有选择的用户（已发邮件者不能重置）</a>
 <table border = 1>
@@ -119,7 +119,7 @@
 		</tr>
 	</tbody>
 </table>
-<br><hr><b>已拒绝用户信息：</b>
+<br><hr><b>已拒绝用户信息({{rejected_users|length}})：</b>
 <a href='javascript:void' onclick="sendRejectEmails()">发邮件给所有选中的“已拒绝未发邮件”用户</a> --- 
 <a href='javascript:void' onclick="resetSelectedUsers_reject()">重置所有选择的用户（已发邮件者不能重置）</a>
 <table border = 1>

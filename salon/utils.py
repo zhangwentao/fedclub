@@ -62,7 +62,7 @@ def send_mail(salon, user):
 	msg_root.attach(text_msg)
 
 	image_file = None
-	if (user.accepted):
+	if (user.accepted == 1):
 		# append barcode image file as attachment
 		image_file = get_bar_code(salon.code, user.barcode)
 		image_content = open(image_file, 'rb').read()
