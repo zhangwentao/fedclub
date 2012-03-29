@@ -48,9 +48,9 @@ def send_mail(salon, user):
 	msg_root["Accept-Language"] = "zh-CN"
 	msg_root["Accept-Charset"]="ISO-8859-1,utf-8"
 
-	if (user.accepted):
+	if user.accepted == 1:
 		t = loader.get_template('email/accept.html')
-	else:
+	elif user.accepted == 2:
 		t = loader.get_template('email/reject.html')
 	# email message
 	c = Context({
@@ -76,7 +76,7 @@ def send_mail(salon, user):
 	to_list = user.email
 
 	if DEBUG_MODE:
-		to_list = 'zhifu.wang@renren-inc.com'
+		to_list = 'wentao.zhang@renren-inc.com'
 
 	# from
 	me = 'no-reply.fed' + "<no-reply.fed@renren-inc.com>"
