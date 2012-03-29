@@ -87,6 +87,7 @@ def users_add(request, salon_id):
 		user.register_time = datetime.datetime.today()
 		user.offline_reg = 1
 		user.accepted = 1
+		user.checkined = 1
 		user.save()
 		return HttpResponseRedirect('/salon/' + user.salon.code + '/')
 
@@ -94,6 +95,7 @@ def users_add(request, salon_id):
 def users_delete(request, salon_id):
 	return HttpResponse('users_delete')
 
+# 批量重置未发送邮件的用户
 #^salon/(?P<salon_id>[\w\d]+)/users/reset$
 def users_reset(request, salon_id):
 	if request.POST.has_key('select_rejected_users'):
@@ -116,23 +118,25 @@ def users_reset(request, salon_id):
 
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
+# 批量通过未处理的用户
 # ^salon/(?P<salon_id>[\w\d]+)/users/accept$
 def users_accept(request, salon_id):
 	if request.POST.has_key('select_untreated_users'):
 		user_ids = request.POST.getlist('select_untreated_users')
 		for user_id in user_ids:
 			user = User.objects.get(user_id = user_id)
-			if (user.accepted != 1):
+			if (user.accepted == 0):
 				user.accepted = 1
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
+# 批量拒绝未处理的用户
 # ^salon/(?P<salon_id>[\w\d]+)/users/reject$
 def users_reject(request, salon_id):
 	if request.POST.has_key('select_untreated_users'):
 		user_ids = request.POST.getlist('select_untreated_users')
 		for user_id in user_ids:
 			user = User.objects.get(user_id = user_id)
-			if (user.accepted != 2):
+			if (user.accepted == 0 ):
 				user.accepted = 2
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
@@ -147,7 +151,7 @@ def users_accept_email(request, salon_id):
 		user_ids = request.POST.getlist('select_accepted_users')
 		for user_id in user_ids:
 			user = User.objects.get(user_id = user_id)
-			if (user.accepted == 1) and send_mail(salon, user):
+			if (user.mailed == 0) and send_mail(salon, user):
 				user.mailed = 1
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
@@ -190,14 +194,12 @@ def user_accept(request, salon_id, user_id):
 	user = User.objects.get(user_id = user_id)
 	user.accepted = 1
 	return HttpResponseRedirect('/salon/'+salon_id+'/');
-	#return HttpResponse('user_accept')
 
 # ^salon/(?P<salon_id>[\w\d]+)/user/(?P<user_id>[\w\d]+)/reject$
 def user_reject(request, salon_id, user_id):
 	user = User.objects.get(user_id = user_id)
 	user.accepted = 2
 	return HttpResponseRedirect('/salon/'+salon_id+'/');
-	#return HttpResponse('user_reject')
 
 # ^salon/(?P<salon_id>[\w\d]+)/user/(?P<user_id>[\w\d]+)/email$
 def user_email(request, salon_id, user_id):
@@ -209,15 +211,13 @@ def user_accept_email(request, salon_id, user_id):
 	salon = Salon.objects.get(code = salon_id)
 	if send_mail(salon, user) and (user.mailed != 1):
 		user.mailed = 1
-		user.save()
-
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
 # ^salon/(?P<salon_id>[\w\d]+)/user/(?P<user_id>[\w\d]+)/reject_email$
 def user_reject_email(request, salon_id, user_id):
 	user = User.objects.get(user_id = user_id)
 	salon = Salon.objects.get(code = salon_id)
-	if send_mail(salon, user) and (user.mailed!= 1):
+	if send_mail(salon, user) and (user.mailed != 1):
 		user.mailed = 1
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
