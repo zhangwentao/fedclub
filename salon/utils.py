@@ -14,7 +14,7 @@ from salon.models import Salon, User
 from django.template import Context, loader
 
 google_chart_api_url = 'http://chart.apis.google.com/chart?cht=qr&chs=150x150&chl='
-check_in_url = 'http://fed.d.xiaonei.com/salon/%s/users/checkin?barcode=%s'
+check_in_url = 'http://fed.d.xiaonei.com/salon/%s/checkin?barcode=%s'
 
 #加一个开关，避免调试邮件发给用户了（系统真正投入使用了将此标志置为False）
 DEBUG_MODE = True
