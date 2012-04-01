@@ -102,19 +102,13 @@ def users_reset(request, salon_id):
 		user_ids = request.POST.getlist('select_rejected_users')
 		for user_id in user_ids:
 			user = User.objects.get(user_id = user_id)
-			if (user.accepted == 2 and user.mailed == 1):
-				pass
-			else:
-				user.reset()
+			user.reset()
 
 	if request.POST.has_key('select_accepted_users'):
 		user_ids = request.POST.getlist('select_accepted_users')
 		for user_id in user_ids:
 			user = User.objects.get(user_id = user_id)
-			if (user.accepted == 1 and user.mailed == 1):
-				pass
-			else:
-				user.reset()
+			user.reset()
 
 	return HttpResponseRedirect('/salon/' + salon_id + '/')
 
